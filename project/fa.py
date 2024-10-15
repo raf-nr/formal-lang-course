@@ -1,4 +1,5 @@
 import scipy as sp
+import numpy as np
 
 from dataclasses import dataclass
 
@@ -54,3 +55,49 @@ class AdjacencyMatrixFA:
                     self._boolean_decomposition[symbol][
                         self._states_indices[u], self._states_indices[v]
                     ] = True
+
+    @property
+    def boolean_decomposition(self) -> dict[Symbol, sp.sparse.csc_matrix]:
+        return self._boolean_decomposition
+
+    @property
+    def states(self) -> set[State]:
+        return self._states
+
+    @property
+    def start_states(self) -> set[State]:
+        return self._start_states
+
+    @property
+    def final_states(self) -> set[State]:
+        return self._final_states
+
+    @property
+    def states_amount(self) -> int:
+        return self._states_amount
+
+    @property
+    def states_indices(self) -> dict[State, int]:
+        return self._states_indices
+
+    @property
+    def start_states_indices(self) -> set[int]:
+        return self._start_states_indices
+
+    @property
+    def final_states_indices(self) -> set[int]:
+        return self._final_states_indices
+
+    @property
+    def start_configuration(self) -> np.ndarray:
+        start_config = np.zeros(self._states_amount, dtype=bool)
+        for start_state_index in self._start_states_indices:
+            start_config[start_state_index] = True
+        return start_config
+
+    @property
+    def final_configuration(self) -> np.ndarray:
+        final_config = np.zeros(self._states_amount, dtype=bool)
+        for final_state_index in self._final_states_indices:
+            final_config[final_state_index] = True
+        return final_config
