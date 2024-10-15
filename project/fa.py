@@ -1,7 +1,7 @@
 import functools
 import operator
-import scipy as sp
 import numpy as np
+import scipy as sp
 
 from dataclasses import dataclass
 from typing import Iterable
@@ -140,3 +140,64 @@ class AdjacencyMatrixFA:
             print(f"Matrix for symbol '{symbol}':")
             print(matrix.toarray())
             print()
+
+
+def intersect_automata(
+    automaton1: AdjacencyMatrixFA, automaton2: AdjacencyMatrixFA
+) -> AdjacencyMatrixFA:
+    states: set[State] = set()
+    start_states: set[State] = set()
+    final_states: set[State] = set()
+    states_indices: dict[State, int] = {}
+    boolean_decomposition: dict[Symbol, sp.sparse.csc_matrix] = {}
+
+    for first_automaton_state in automaton1.states:
+        for second_automaton_state in automaton2.states:
+            first_automaton_state_index = automaton1.states_indices[
+                first_automaton_state
+            ]
+            second_automaton_state_index = automaton2.states_indices[
+                second_automaton_state
+            ]
+
+            new_state = State((first_automaton_state, second_automaton_state))
+            new_automaton_state_index = (
+                automaton2.states_amount * first_automaton_state_index
+                + second_automaton_state_index
+            )
+
+            states.add(new_state)
+            states_indices[new_state] = new_automaton_state_index
+
+            if (
+                first_automaton_state in automaton1.start_states
+                and second_automaton_state in automaton2.start_states
+            ):
+                start_states.add(new_state)
+            if (
+                first_automaton_state in automaton1.final_states
+                and second_automaton_state in automaton2.final_states
+            ):
+                final_states.add(new_state)
+
+    for symbol in automaton1.boolean_decomposition:
+        if symbol not in automaton2.boolean_decomposition:
+            continue
+
+        first_automaton_symbol_adj = automaton1.boolean_decomposition[symbol]
+        second_automaton_symbol_adj = automaton2.boolean_decomposition[symbol]
+
+        new_automaton_symbol_adj = sp.sparse.kron(
+            first_automaton_symbol_adj, second_automaton_symbol_adj, format="csc"
+        )
+        boolean_decomposition[symbol] = new_automaton_symbol_adj
+
+    return AdjacencyMatrixFA(
+        AdjacencyMatrixFAData(
+            states=states,
+            start_states=start_states,
+            final_states=final_states,
+            states_indices=states_indices,
+            boolean_decomposition=boolean_decomposition,
+        )
+    )
