@@ -1,12 +1,24 @@
 from networkx import MultiDiGraph
 
-from project.fa_ import AdjacencyMatrixFA, intersect_automata
+from project.fa import AdjacencyMatrixFA, intersect_automata
 from project.fa_utils import graph_to_nfa, regex_to_dfa
 
 
 def tensor_based_rpq(
     regex: str, graph: MultiDiGraph, start_nodes: set[int], final_nodes: set[int]
 ) -> set[tuple[int, int]]:
+    """
+    Perform a Regular Path Query (RPQ) using a tensor-based approach.
+
+    Args:
+        regex (str): Regular expression defining the query (limitation).
+        graph (MultiDiGraph): Directed graph to search for paths.
+        start_nodes (set[int]): Nodes to start the path search from.
+        final_nodes (set[int]): Nodes to end the path search.
+
+    Returns:
+        set[tuple[int, int]]: Pairs of nodes (start, end) with paths matching the regex.
+    """
     graph_nfa = graph_to_nfa(graph, start_nodes, final_nodes)
     regex_dfa = regex_to_dfa(regex)
 

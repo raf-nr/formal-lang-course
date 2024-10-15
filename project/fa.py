@@ -11,6 +11,17 @@ from pyformlang.finite_automaton import NondeterministicFiniteAutomaton, Symbol,
 
 @dataclass
 class AdjacencyMatrixFAData:
+    """
+    Data structure to represent a finite automaton using adjacency matrices.
+
+    Attributes:
+        states (set[State]): Set of all states in the automaton.
+        start_states (set[State]): Set of initial states.
+        final_states (set[State]): Set of accepting (final) states.
+        states_indices (dict[State, int]): Mapping from states to indices.
+        boolean_decomposition (dict[Symbol, sp.sparse.csc_matrix]): Boolean matrices representing transitions for each symbol.
+    """
+
     states: set[State]
     start_states: set[State]
     final_states: set[State]
@@ -19,9 +30,24 @@ class AdjacencyMatrixFAData:
 
 
 class AdjacencyMatrixFA:
+    """
+    A class to represent a finite automaton using adjacency matrices.
+
+    Supports conversion of an NFA to an adjacency matrix form and provides
+    methods for basic operations like checking acceptance and calculating
+    transitive closure.
+    """
+
     def __init__(
         self, automaton: NondeterministicFiniteAutomaton | AdjacencyMatrixFAData
     ):
+        """
+        Initializes the adjacency matrix representation of the automaton.
+
+        Args:
+            automaton (NondeterministicFiniteAutomaton | AdjacencyMatrixFAData):
+                The automaton to convert or an already prepared data structure.
+        """
         self._states: set[State] = automaton.states
         self._start_states: set[State] = automaton.start_states
         self._final_states: set[State] = automaton.final_states
@@ -61,38 +87,49 @@ class AdjacencyMatrixFA:
 
     @property
     def boolean_decomposition(self) -> dict[Symbol, sp.sparse.csc_matrix]:
+        """
+        Returns the boolean matrices representing transitions for each symbol.
+        """
         return self._boolean_decomposition
 
     @property
     def states(self) -> set[State]:
+        """Returns the set of all states in the automaton."""
         return self._states
 
     @property
     def start_states(self) -> set[State]:
+        """Returns the set of initial states in the automaton."""
         return self._start_states
 
     @property
     def final_states(self) -> set[State]:
+        """Returns the set of accepting (final) states in the automaton."""
         return self._final_states
 
     @property
     def states_amount(self) -> int:
+        """Returns the number of states in the automaton."""
         return self._states_amount
 
     @property
     def states_indices(self) -> dict[State, int]:
+        """Returns the mapping from states to indices."""
         return self._states_indices
 
     @property
     def start_states_indices(self) -> set[int]:
+        """Returns the indices of initial states."""
         return self._start_states_indices
 
     @property
     def final_states_indices(self) -> set[int]:
+        """Returns the indices of accepting (final) states."""
         return self._final_states_indices
 
     @property
     def start_configuration(self) -> np.ndarray:
+        """Creates an array indicating the initial configuration of the automaton."""
         start_config = np.zeros(self._states_amount, dtype=bool)
         for start_state_index in self._start_states_indices:
             start_config[start_state_index] = True
@@ -100,12 +137,19 @@ class AdjacencyMatrixFA:
 
     @property
     def final_configuration(self) -> np.ndarray:
+        """Creates an array indicating the accepting configuration of the automaton."""
         final_config = np.zeros(self._states_amount, dtype=bool)
         for final_state_index in self._final_states_indices:
             final_config[final_state_index] = True
         return final_config
 
     def transitive_closure(self) -> sp.sparse.csc_matrix:
+        """
+        Computes the transitive closure (reachability matrix) of the automaton adjacency matrix.
+
+        Returns:
+            sp.sparse.csc_matrix: The transitive closure matrix.
+        """
         matrices_list = list(self._boolean_decomposition.values())
         init_matrix = sp.sparse.csc_matrix(self._matrix_size, dtype=bool)
         main_diagonal_indices = np.arange(self._matrix_size[0])
@@ -115,6 +159,15 @@ class AdjacencyMatrixFA:
         return closure
 
     def accepts(self, word: Iterable[Symbol]) -> bool:
+        """
+        Checks if the automaton accepts the given word.
+
+        Args:
+            word (Iterable[Symbol]): A sequence of symbols.
+
+        Returns:
+            bool: True if the automaton accepts the word, False otherwise.
+        """
         start_config = self.start_configuration
         final_config = self.final_configuration
 
@@ -128,6 +181,12 @@ class AdjacencyMatrixFA:
         return np.any(current_config & final_config)
 
     def is_empty(self) -> bool:
+        """
+        Checks if the automaton's language is empty.
+
+        Returns:
+            bool: True if the automaton accepts no words, False otherwise.
+        """
         transitive_closure = self.transitive_closure()
         empty = True
         for start in self._start_states_indices:
@@ -136,6 +195,7 @@ class AdjacencyMatrixFA:
         return empty
 
     def print_matrices(self) -> None:
+        """Prints the adjacency matrices for each symbol."""
         for symbol, matrix in self._boolean_decomposition.items():
             print(f"Matrix for symbol '{symbol}':")
             print(matrix.toarray())
@@ -145,6 +205,16 @@ class AdjacencyMatrixFA:
 def intersect_automata(
     automaton1: AdjacencyMatrixFA, automaton2: AdjacencyMatrixFA
 ) -> AdjacencyMatrixFA:
+    """
+    Constructs a new automaton's adjacency matrix that is the intersection of two input automata.
+
+    Args:
+        automaton1 (AdjacencyMatrixFA): The first automaton adjacency matrix.
+        automaton2 (AdjacencyMatrixFA): The second automaton adjacency matrix.
+
+    Returns:
+        AdjacencyMatrixFA: The resulting automaton adjacency matrix after intersection.
+    """
     states: set[State] = set()
     start_states: set[State] = set()
     final_states: set[State] = set()
