@@ -4,6 +4,7 @@ import scipy as sp
 import numpy as np
 
 from dataclasses import dataclass
+from typing import Iterable
 
 from pyformlang.finite_automaton import NondeterministicFiniteAutomaton, Symbol, State
 
@@ -112,3 +113,30 @@ class AdjacencyMatrixFA:
         common_matrix = functools.reduce(operator.add, matrices_list, init_matrix)
         closure = common_matrix**self._states_amount
         return closure
+
+    def accepts(self, word: Iterable[Symbol]) -> bool:
+        start_config = self.start_configuration
+        final_config = self.final_configuration
+
+        current_config = start_config.copy()
+
+        for symbol in word:
+            if symbol not in self._boolean_decomposition:
+                return False
+            matrix = self._boolean_decomposition[symbol]
+            current_config = current_config @ matrix.toarray()
+        return np.any(current_config & final_config)
+
+    def is_empty(self) -> bool:
+        transitive_closure = self.transitive_closure()
+        empty = True
+        for start in self._start_states_indices:
+            for final in self._final_states_indices:
+                empty = False if transitive_closure[start, final] else empty
+        return empty
+
+    def print_matrices(self) -> None:
+        for symbol, matrix in self._boolean_decomposition.items():
+            print(f"Matrix for symbol '{symbol}':")
+            print(matrix.toarray())
+            print()
