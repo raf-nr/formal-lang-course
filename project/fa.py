@@ -1,3 +1,5 @@
+import functools
+import operator
 import scipy as sp
 import numpy as np
 
@@ -101,3 +103,12 @@ class AdjacencyMatrixFA:
         for final_state_index in self._final_states_indices:
             final_config[final_state_index] = True
         return final_config
+
+    def transitive_closure(self) -> sp.sparse.csc_matrix:
+        matrices_list = list(self._boolean_decomposition.values())
+        init_matrix = sp.sparse.csc_matrix(self._matrix_size, dtype=bool)
+        main_diagonal_indices = np.arange(self._matrix_size[0])
+        init_matrix[main_diagonal_indices, main_diagonal_indices] = True
+        common_matrix = functools.reduce(operator.add, matrices_list, init_matrix)
+        closure = common_matrix**self._states_amount
+        return closure
