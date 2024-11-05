@@ -6,6 +6,7 @@ from pyformlang.finite_automaton import (
     State,
 )
 from pyformlang.regular_expression import Regex
+from pyformlang.rsa import RecursiveAutomaton
 
 
 def regex_to_dfa(regex: str) -> DeterministicFiniteAutomaton:
@@ -55,3 +56,37 @@ def graph_to_nfa(
         nfa.add_final_state(State(state))
 
     return nfa
+
+
+def rsm_to_nfa(automaton: RecursiveAutomaton) -> NondeterministicFiniteAutomaton:
+    """
+    Converts a recursive automaton (RSM) to a nondeterministic finite automaton (NFA).
+
+    Args:
+        automaton (RecursiveAutomaton): The recursive automaton to convert.
+
+    Returns:
+        NondeterministicFiniteAutomaton: The resulting NFA equivalent to the recursive automaton.
+    """
+    result_nfa = NondeterministicFiniteAutomaton()
+
+    for rule, container in automaton.boxes.items():
+        deterministic_automaton = container.dfa
+
+        start_end_states = deterministic_automaton.start_states.union(
+            deterministic_automaton.final_states
+        )
+        for state in start_end_states:
+            combined_state = State((rule, state))
+            if state in deterministic_automaton.final_states:
+                result_nfa.add_final_state(combined_state)
+            if state in deterministic_automaton.start_states:
+                result_nfa.add_start_state(combined_state)
+
+        transitions = deterministic_automaton.to_networkx().edges(data="label")
+        for origin, destination, transition_label in transitions:
+            initial_state = State((rule, origin))
+            target_state = State((rule, destination))
+            result_nfa.add_transition(initial_state, transition_label, target_state)
+
+    return result_nfa
